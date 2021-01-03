@@ -15,12 +15,20 @@ int main()
 
     lcd_init(LCD_DISP_ON);
 
+    PORTB = 0;
+    PORTC = 0;
+
+    // LED on Port C Pin 5
+    DDRC = (1 << PIN5);
+
     for (;;)
     {
+        PORTC |= (1 << PIN5);
+         lcd_print_two_lines("Hello World", "foo");
         _delay_ms(500);
-        lcd_print_two_lines("Hello World", "foo");
-        _delay_ms(500);
+        PORTC &= ~(1 << PIN5);
         lcd_clrscr();
+        _delay_ms(500);
     }
 }
 
