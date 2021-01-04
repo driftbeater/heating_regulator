@@ -23,10 +23,13 @@ int main()
 
     for (;;)
     {
-        PORTC |= (1 << PIN5);
-         lcd_print_two_lines("Hello World", "foo");
+        // Turn LED on
+        PORTC &= ~(1 << PIN5);        
+        lcd_print_two_lines("Hello World", "foo");
         _delay_ms(500);
-        PORTC &= ~(1 << PIN5);
+
+        // Turn LED off
+        PORTC |= (1 << PIN5);
         lcd_clrscr();
         _delay_ms(500);
     }
