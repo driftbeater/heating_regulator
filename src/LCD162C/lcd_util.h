@@ -12,4 +12,8 @@
 
 void lcd_print_two_lines(const char* line1, const char* line2);
 
+void lcd_print_uint8_t_decimal(const char* name, uint8_t value);
+void lcd_print_uint8_t_hex(const char* name, uint8_t value);
+void lcd_print_uint16_t_decimal(const char* name, uint16_t value);
+
 #endif /* LCD_UTIL_H_ */
