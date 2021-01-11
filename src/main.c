@@ -7,6 +7,10 @@
 #include <avr/io.h>
 #include <delay.h>
 #include "LCD162C/lcd_util.h"
+#include <string.h>
+#include <stdio.h>
+#include <avr/interrupt.h>
+#include <avr/sleep.h>
 
 void init_adc()
 {
@@ -30,12 +34,20 @@ void init_adc()
     // todo set I-bit in SREG
 
     // Voltage Reference selection
-    // AVCC with external capacitor at AREF: 10
-    ADMUX &= ~(1 << REFS1);
-    ADMUX |=  (1 << REFS0);
+    // Internal Ref voltage with capacitor at AREF pin
+    ADMUX |= (1 << REFS1);
+    ADMUX |= (1 << REFS0);
 
     // Right adjust result
     ADMUX &= ~(1 << ADLAR);
+
+    set_sleep_mode(SLEEP_MODE_ADC);
+
+}
+
+ISR(ADC_vect)
+{
+    // disable interrupts
 }
 
 uint16_t convert_atod()
@@ -50,23 +62,12 @@ uint16_t convert_atod()
     // Start Conversion
     ADCSRA |= (1 << ADSC);
 
-    _delay_ms(100);
-    // Make sure ADIF bit is unset
+    sleep_mode();
 
-    uint8_t tmp = ADCSRA;
-    if ( (tmp & (1 << ADIF)) != 0)
-    {
-       lcd_print_two_lines("Warning", "ADIF is set");
-       // return 0;
-    }
-    if ( (tmp & (1 << ADIF)) == 0)
-    {
-       lcd_print_two_lines("Warning", "ADIF is set");
-       // return 0;
-    }
 
     uint16_t x = ADCW;
     lcd_print_uint16_t_decimal("ADCW", x);
+    _delay_ms(100);
 
     return x;
 
@@ -76,6 +77,7 @@ int main()
 {
     // init AVR
     _delay_ms(0);
+    sei();
 
     // init LCD Display
     lcd_init(LCD_DISP_ON);
@@ -87,26 +89,32 @@ int main()
     init_adc();
     lcd_print_two_lines("ADC init", "done");
     _delay_ms(2000);
+    uint8_t led = 0U;
 
     for (;;)
     {
         lcd_clrscr();
         
-        // Turn LED on
-        PORTC &= ~(1 << PIN5);
-        // lcd_print_two_lines("LED turned on", "");
-        // _delay_ms(2000);
+        // Toggle LED
+        //PORTC  ^= (1 << PIN5);
+        led ^= 1U;
+        if (led != 0)
+        {
+            PORTC |= (led << PIN5);
+        }   
+        else
+        {
+            PORTC &= ~(1 << PIN5);
+        }
+        
+
+        //_delay_ms(100);
 
         // Do A/D conversion
         uint16_t value = convert_atod();
 
-        // Turn LED off
-        PORTC |= (1 << PIN5);
-        // lcd_print_two_lines("LED turned off", "");
-        // _delay_ms(2000);
-
         lcd_print_uint16_t_decimal("ADCW", value);   
-        _delay_ms(1000);
+        //_delay_ms(1);
 
     }
 }
