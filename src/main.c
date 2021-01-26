@@ -47,14 +47,26 @@ void init_adc()
 }
 
 
-uint16_t convert_atod()
+void select_channel_adc3()
 {
-    // Select channel
-    // ADC4 0100
+    // Select channel ADC3: 0011
+    ADMUX &= ~(1 << MUX3);
+    ADMUX &= ~(1 << MUX2);
+    ADMUX |=  (1 << MUX1);
+    ADMUX |=  (1 << MUX0);
+}
+
+void select_channel_adc4()
+{
+    // Select channel ADC4: 0100
     ADMUX &= ~(1 << MUX3);
     ADMUX |=  (1 << MUX2);
     ADMUX &= ~(1 << MUX1);
     ADMUX &= ~(1 << MUX0);
+}
+
+uint16_t convert_atod()
+{
 
     // Start Conversion
     ADCSRA |= (1 << ADSC);
@@ -105,7 +117,7 @@ int main()
     DDRC = (1 << PIN5);
     uint8_t led = 0U;
 
-    // A/D Converter on Port C Pin 4
+    // A/D Converter on Port C Pin 3 and 4 
     init_adc();
     lcd_print_two_lines("ADC init", "done");
     _delay_ms(2000);
@@ -139,22 +151,29 @@ int main()
         {
             PORTC &= ~(1 << PIN5);
         }
+
+        // Do A/D conversion on ADC3 
+        select_channel_adc3();
+        uint16_t value_adc3 = convert_atod();
+
+        lcd_print_uint16_t_decimal("ADC3:", value_adc3);   
+        _delay_ms(1000);
         
 
-        //_delay_ms(100);
+        // Do A/D conversion on ADC4
+        select_channel_adc4();
+        uint16_t value_adc4 = convert_atod();
 
-        // Do A/D conversion
-        uint16_t value = convert_atod();
-
-        lcd_print_uint16_t_decimal("ADCW", value);   
+        lcd_print_uint16_t_decimal("ADC4:", value_adc4);   
         _delay_ms(1000);
-        for (uint16_t x = 10; x >= 0; --x)
+        
+        for (uint16_t x = 10; x >= 1; --x)
         {
            char buf[8];
            snprintf(buf, 8, "to %d", x);
            lcd_print_two_lines("Setting OCR1A", buf);
            OCR1A = x;
-           _delay_ms(4000);
+           _delay_ms(500);
         }
     }
 }
