@@ -46,7 +46,6 @@ void init_adc()
 
 }
 
-
 void select_channel_adc3()
 {
     // Select channel ADC3: 0011
