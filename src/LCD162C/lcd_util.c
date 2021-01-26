@@ -38,7 +38,7 @@ void lcd_print_uint16_t_decimal(const char* name, uint16_t value)
 	lcd_print_two_lines(name, buf);
 }
 
-lcd_print_two_bits(const char* name1, uint8_t byte1, uint8_t bit1, const char* name2, uint8_t byte2, uint8_t bit2)
+void lcd_print_two_bits(const char* name1, uint8_t byte1, uint8_t bit1, const char* name2, uint8_t byte2, uint8_t bit2)
 {
     char bufLine1[16 + 1];
     char bufLine2[16 + 1];

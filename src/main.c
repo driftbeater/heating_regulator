@@ -6,49 +6,46 @@
 
 #include <avr/io.h>
 #include <delay.h>
-#include "LCD162C/lcd_util.h"
 #include <string.h>
 #include <stdio.h>
 #include <avr/interrupt.h>
 #include <avr/sleep.h>
 
+
+#include "LCD162C/lcd_util.h"
+#include "c_util/string_util.h"
+
+
 void init_adc()
 {
+
     // Enable ADC
     // Set ADEN bit in ADCSRA (AD Control and Status Register A)
-    ADCSRA |= (1 << ADEN);
+    ADCSRA |= _BV(ADEN);
 
     // Configure prescaler so a frequency of 200kHz results
     // 8'000'000 / 200'000 = 40
     // ADPS1 und ADPS2 -> 64. 8'000'000 / 64 = 125kHz
-    ADCSRA |=  (1 << ADPS2);
-    ADCSRA |=  (1 << ADPS1);
-    ADCSRA &= ~(1 << ADPS0);
+    ADCSRA |=  _BV(ADPS2);
+    ADCSRA |=  _BV(ADPS1);
+    ADCSRA &= ~_BV(ADPS0);
 
     // Set single conversion mode
-    ADCSRA &= ~(1 << ADFR);
+    ADCSRA &= ~_BV(ADFR);
 
-    // Enable Conversion Complete Interrupt
-    ADCSRA |= (1 << ADIE);
-
-    // todo set I-bit in SREG
+    // Disable Conversion Complete Interrupt
+    ADCSRA &= ~_BV(ADIE);
 
     // Voltage Reference selection
     // Internal Ref voltage with capacitor at AREF pin
-    ADMUX |= (1 << REFS1);
-    ADMUX |= (1 << REFS0);
+    ADMUX |= _BV(REFS1);
+    ADMUX |= _BV(REFS0);
 
     // Right adjust result
-    ADMUX &= ~(1 << ADLAR);
-
-    set_sleep_mode(SLEEP_MODE_ADC);
+    ADMUX &= ~_BV(ADLAR);
 
 }
 
-ISR(ADC_vect)
-{
-    // disable interrupts
-}
 
 uint16_t convert_atod()
 {
@@ -62,41 +59,77 @@ uint16_t convert_atod()
     // Start Conversion
     ADCSRA |= (1 << ADSC);
 
-    sleep_mode();
+    lcd_print_two_bits("ADSC", ADCSRA, ADSC, "ADSC", ADCSRA, ADSC );
+    // todo wait for bit ??
 
+    loop_until_bit_is_clear(ADCSRA, ADSC);
 
-    uint16_t x = ADCW;
-    lcd_print_uint16_t_decimal("ADCW", x);
-    _delay_ms(100);
+   lcd_print_uint16_t_decimal("ADCW", ADCW);
+    _delay_ms(2000);
 
-    return x;
+    return ADCW;
 
+}
+
+void init_pwm()
+{
+    // OC1A is output on Port B Pin 1
+    DDRB |= _BV(PB1);
+   
+    // Non-inverting. COM1A1:1 COM1A0:0
+    TCCR1A |= (1 << COM1A1);
+
+    // PWM Mode. 8 bit resolution
+    TCCR1A &= ~_BV(WGM12);
+    TCCR1A &= ~_BV(WGM11);
+    TCCR1A |=  _BV(WGM10);
+
+    // Prescaler. Clock 8'000'000 / 1024 = 7800Hz. Frequency = 8'000'000 / 1'024 / 510 (in 8 bit mode) = 15.3Hz
+
+    TCCR1B |= _BV(CS12);
+    TCCR1B &= _BV(CS11);
+    TCCR1B |= _BV(CS10);
+ 
 }
 
 int main()
 {
     // init AVR
     _delay_ms(0);
-    sei();
+    cli();
 
     // init LCD Display
     lcd_init(LCD_DISP_ON);
 
     // LED on Port C Pin 5
     DDRC = (1 << PIN5);
+    uint8_t led = 0U;
 
     // A/D Converter on Port C Pin 4
     init_adc();
     lcd_print_two_lines("ADC init", "done");
     _delay_ms(2000);
-    uint8_t led = 0U;
+
+    // PWM Signal on output OC1
+    init_pwm();   
 
     for (;;)
     {
         lcd_clrscr();
+
+        // uint8_t v = 0xFF;
+        // lcd_print_two_lines("0xFF", uint8_t_to_bin(v));
+        // _delay_ms(2000);
+        // v = 0x1F;
+        // lcd_print_two_lines("0x1F", uint8_t_to_bin(v));
+        // _delay_ms(2000);
+        // v = 0x73;
+        // lcd_print_two_lines("0x73", uint8_t_to_bin(v));
+        // _delay_ms(2000);
         
         // Toggle LED
-        //PORTC  ^= (1 << PIN5);
+        //PORTC  ^= _BV(PIN5);
+        
         led ^= 1U;
         if (led != 0)
         {
@@ -114,7 +147,14 @@ int main()
         uint16_t value = convert_atod();
 
         lcd_print_uint16_t_decimal("ADCW", value);   
-        //_delay_ms(1);
-
+        _delay_ms(1000);
+        for (uint16_t x = 10; x >= 0; --x)
+        {
+           char buf[8];
+           snprintf(buf, 8, "to %d", x);
+           lcd_print_two_lines("Setting OCR1A", buf);
+           OCR1A = x;
+           _delay_ms(4000);
+        }
     }
 }
