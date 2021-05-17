@@ -52,8 +52,18 @@ void lcd_print_two_bits(const char* name1, uint8_t byte1, uint8_t bit1, const ch
 
 void lcd_print_two_uint8s(const char* name1, uint8_t value1, const char* name2, uint8_t value2)
 {
+	char line1[8 + 1];
+	char line2[8 + 1];
+	snprintf(line1, sizeof(line1), "%s: %u", name1, value1);
+	snprintf(line2, sizeof(line2), "%s: %u", name2, value2);
+	lcd_print_two_lines(line1, line2);
+}
+
+void lcd_print_two_uint16s(const char* name1, uint16_t value1, const char* name2, uint16_t value2)
+{
 	char line1[16 + 1];
 	char line2[16 + 1];
 	snprintf(line1, sizeof(line1), "%s: %u", name1, value1);
 	snprintf(line2, sizeof(line2), "%s: %u", name2, value2);
+	lcd_print_two_lines(line1, line2);
 }
