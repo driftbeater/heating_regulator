@@ -203,7 +203,7 @@ int main()
 
         lcd_clrscr();
         lcd_print_uint16_t_decimal("Count", ++count);
-        _delay_ms(500);
+        // _delay_ms(500);
 
         // Do A/D conversion on ADC2. Sollwert
         select_channel_adc2();
@@ -211,7 +211,7 @@ int main()
         // A value of 0 -> 10 degrees, A value of 1024 -> 35 degrees
         uint16_t tempSoll = ( value_adc2 * (uint16_t)25 / (uint16_t)1024 ) + 10;
         lcd_print_two_uint16s("value_adc2", value_adc2, "tempSoll", tempSoll);
-        _delay_ms(2000);
+        // _delay_ms(2000);
 
         // Do A/D conversion on ADC3. Input voltage
         select_channel_adc3();
@@ -220,7 +220,7 @@ int main()
         // 2.21V = 2.56 * x / 1024 -> x = 884
         uint16_t v0 = value_adc3 * (uint16_t)42 / (uint16_t)884;
         lcd_print_two_uint16s("value_adc3", value_adc3, "v0", v0);
-        _delay_ms(1000);
+        // _delay_ms(1000);
 
         // Do A/D conversion on ADC4. Cooler  temperature
         select_channel_adc4();
@@ -228,38 +228,91 @@ int main()
         uint16_t tempCooler = getRNP50UTempFromAdcValue(value_adc4);
 
         lcd_print_two_uint16s("ADC4", value_adc4, "TempCooler", tempCooler);
-        _delay_ms(1000);
+        _delay_ms(2000);
 
         // Do A/D conversion on ADC5. Air temperature
         select_channel_adc5();
         uint16_t value_adc5 = convert_atod();
         uint16_t tempAir = getRNP50UTempFromAdcValue(value_adc5);
         lcd_print_two_uint16s("value_adc5", value_adc5, "TempAir", tempAir);
-        _delay_ms(1000);
+        // _delay_ms(1000);
 
-        // Calculation of PWM rate
+        lcd_print_two_uint16s("TempSoll", tempSoll, "TempAir", tempAir);
+        _delay_ms(2000);
+        // Calculation of max power due to input voltage
         uint16_t Pmax = v0 * v0 / POWERRESISTOR;
+        // Calculation of max power at resistor due to derating curve
         uint16_t PDerating = getRNP50UDeratedPower(tempCooler);
         lcd_print_two_uint16s("Pmax", Pmax, "PDerating", PDerating);
-        _delay_ms(2000);
+        // _delay_ms(2000);
 
+        // Calculation of PWM rate
+        // Proportional controller
+        // const uint16_t P0 = 1000; // Fixed point arithmetic. 1000 means 1
+        const uint16_t P0 = 5; // Fixed point arithmetic. 1000 means 1
+        uint16_t pSoll = (tempSoll - tempAir) * P0;
+        if (pSoll > PDerating)
+        {
+            pSoll = PDerating;
+        }
+        if (tempAir > tempSoll)
+        {
+            pSoll = 0;
+        }
+        // uint32_t pSoll1000 = (tempSoll - tempAir) * P0;
+        // uint16_t pSoll_16 = pSoll1000 / 1000;
+        uint16_t pwmRate = 254 * pSoll / Pmax;
+        if (pwmRate > 254)
+        {
+            pwmRate = 254;
+        }
+        if (tempAir > 50)
+        {
+            pwmRate = 0;
+        }
+        if (tempCooler > 70)
+        {
+            pwmRate = 0;
+        }
+        // uint32_t pwmRate = 254 * pSoll1000 / Pmax;
+        // uint16_t pwmRate16 = pwmRate / 1000;
+        lcd_print_two_uint16s("pSoll", pSoll, "pwmRate", pwmRate);
+        _delay_ms(4000);
+        // OCR1A is PWM rate of heating
+        OCR1A = pwmRate;
+        // OCR1A = 0;
+        // OXR1B is for LED showing heating rate
+        if (pwmRate > 0)
+        {
+            OCR1B = pwmRate;
+        }
+        else
+        {
+            // maintain minimum helligkeit
+            OCR1B = 1;
+        }
+        
+
+
+        /*
         static uint16_t x = 0;
         if ( ++x > 254)
         {
             x = 0;
-        }
+       
 
         // for (uint16_t x = 0; x <= 250; x = x + 2)
         // {
             char buf[16 + 1];
             snprintf(buf, 16 + 1, "to %d", x);
             lcd_print_two_lines("Setting OCR1A", buf);
-            lcd_print_two_uint16s("Setting OCR1A", buf, "PWM rate %", x * (uint16_t)100 / 255);
+            lcd_print_two_uint16s("Setting OCA", buf, "PWM rate %", x * (uint16_t)100 / 255);
             // OCR1A is PWM rate of heating
             OCR1A = x;
             // OXR1B is for LED showing heating rate
             OCR1B = x;
             _delay_ms(1000);
         // }
+        */
     }
 }
