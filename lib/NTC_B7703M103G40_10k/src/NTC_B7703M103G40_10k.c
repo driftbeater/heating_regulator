@@ -2,10 +2,12 @@
 
 #include <avr/io.h>
 
+
 uint16_t getRNP50UDeratedPower(uint16_t temp)
 {
   // Maximum power dependent on flange temperatur
-  int16_t pmax = (int16_t)58 - ( temp / 3 );
+  // temperatures in 10th of degrees
+  int16_t pmax = (int16_t)58 - ( temp / 30 );
   if (pmax < 0)
   { 
     return 0;
@@ -17,6 +19,7 @@ uint16_t getRNP50UDeratedPower(uint16_t temp)
   return pmax;
 }
 
+// Temperature is in 10th degree
 uint16_t getRNP50UTempFromAdcValue(uint16_t adcValue)
 {
   // adc values for temperatures from 4 to 70 degrees.
@@ -92,16 +95,22 @@ uint16_t getRNP50UTempFromAdcValue(uint16_t adcValue)
 
     // The smallest temperature will be 4 degrees.
     // The biggest temperature will be 70 degrees.
-    // if adcvalue is smaller than 90, the temperature returned will be 255
-    int tmp = 255;
+    // if adcvalue is smaller than 90, the temperature returned will be 255 degree, i.e. 2550 10-th 
     for (int x =0; x < 67; ++x)
     {
       if (adcValue > temp[x])
       {
-        tmp = x + 4;
-        break;
+        uint16_t temperature = (x + 4) * 10;
+        // interpolation between the configured values
+        uint16_t delta = adcValue -temp[x];
+        if (delta > 9)
+        {
+          delta = 9;
+        }
+        temperature = temperature + delta;
+        return temperature;
       }
     } 
     
-    return (uint16_t)tmp;
+    return (uint16_t)2550;
 }
