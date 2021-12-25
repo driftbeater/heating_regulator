@@ -91,20 +91,24 @@ void select_channel_adc5()
 
 uint16_t convert_atod()
 {
+    // Do conversion 3 times and return average
 
     // Start Conversion
     ADCSRA |= _BV(ADSC);
-
-    // lcd_print_two_bits("ADSC", ADCSRA, ADSC, "ADSC", ADCSRA, ADSC );
-    // todo wait for bit ??
-
     loop_until_bit_is_clear(ADCSRA, ADSC);
+    uint16_t value = ADCW;
 
-    // lcd_print_uint16_t_decimal("ADCW", ADCW);
-    // _delay_ms(2000);
+    ADCSRA |= _BV(ADSC);
+    loop_until_bit_is_clear(ADCSRA, ADSC);
+    value += ADCW;
 
-    return ADCW;
+    ADCSRA |= _BV(ADSC);
+    loop_until_bit_is_clear(ADCSRA, ADSC);
+    value += ADCW;
+
+    return value / 3;
 }
+
 void init_pwm_counter2()
 {
     // 8 Bit Timer/Counter 2
@@ -181,6 +185,7 @@ int main()
     // init LCD Display
     lcd_init(LCD_DISP_ON);
     lcd_print_two_lines("LCD Display init", "done");
+    _delay_ms(1000);
 
     // A/D Converter on Port C Pin 3 and 4
     init_adc();
@@ -193,15 +198,8 @@ int main()
 
     for (;;)
     {
-
-        // DDRB |= _BV(PB2);
-        // PORTB |= _BV(PB2);
-        // _delay_ms(500);
-        // PORTB &= ~_BV(PB2);
-        // _delay_ms(500);
-
         lcd_clrscr();
-        _delay_ms(500);
+        //_delay_ms(500);
 
         // Do A/D conversion on ADC2. Sollwert
         select_channel_adc2();
@@ -209,8 +207,8 @@ int main()
         // A value of 0 -> 10 degrees, A value of 1024 -> 35 degrees
         // all temperatures in 10th of degrees
         uint32_t tmp = ( (uint32_t)value_adc2 * (uint32_t)250 / (uint32_t)1024 ) + 100;
-        uint16_t tempSoll = tmp;
-        lcd_print_two_uint16s("value_adc2", value_adc2, "tempSoll", tempSoll);
+        uint16_t tempSoll10th = tmp;
+        lcd_print_two_uint16s("value_adc2", value_adc2, "tempSoll", tempSoll10th);
         // _delay_ms(1000);
 
         // Do A/D conversion on ADC3. Input voltage
@@ -228,15 +226,14 @@ int main()
         uint16_t tempCooler = getRNP50UTempFromAdcValue(value_adc4);
 
         lcd_print_two_uint16s("ADC4", value_adc4, "TempCooler", tempCooler);
-        // _delay_ms(2000);
-
+        _delay_ms(1000);
         // Do A/D conversion on ADC5. Air temperature
         select_channel_adc5();
         uint16_t value_adc5 = convert_atod();
-        uint16_t tempAir = getRNP50UTempFromAdcValue(value_adc5);
-        lcd_print_two_uint16s("value_adc5", value_adc5, "TempAir", tempAir);
+        uint16_t tempAir10th = getRNP50UTempFromAdcValue(value_adc5);
+        lcd_print_two_uint16s("value_adc5", value_adc5, "TempAir", tempAir10th);
 
-        lcd_print_two_uint16s("TempSoll", tempSoll, "TempAir", tempAir);
+        lcd_print_two_uint16s("TempSoll", tempSoll10th, "TempAir", tempAir10th);
         _delay_ms(1000);
         // Calculation of max power due to input voltage
         uint16_t Pmax = v0 * v0 / POWERRESISTOR;
@@ -248,23 +245,22 @@ int main()
 
         // Calculation of PWM rate
         // Proportional controller
-        uint16_t pSollTenth = (tempSoll - tempAir) * 5;
+        uint16_t pSollTenth = (tempSoll10th - tempAir10th) * 10;
         lcd_print_two_uint16s("pSoll vor grenze", pSollTenth, "p10th", pSollTenth);
         // _delay_ms(1000);
         if (pSollTenth > PDerating * 10)
         {
             pSollTenth = PDerating * 10;
         }
-        if (tempAir > tempSoll)
+        if (tempAir10th > tempSoll10th)
         {
             pSollTenth = 0;
         }
         lcd_print_two_uint16s("pSoll10th", pSollTenth, "pmax", Pmax);
         // _delay_ms(5000);
-        // uint32_t pSoll1000 = (tempSoll - tempAir) * P0;
-        // uint16_t pSoll_16 = pSoll1000 / 1000;
-        uint32_t ptmp = (uint32_t)254 * (uint32_t)pSollTenth / (Pmax * 10);
-        uint16_t pwmRate = (uint16_t)ptmp;
+
+        uint32_t pwmRate32 = (uint32_t)254 * (uint32_t)pSollTenth / (Pmax * 10);
+        uint16_t pwmRate = (uint16_t)pwmRate32;
         lcd_print_two_uint16s("pSoll", pSollTenth, "pwmRate", pwmRate);
         // _delay_ms(5000);
         if (pwmRate > 254)
@@ -272,7 +268,7 @@ int main()
             pwmRate = 254;
         }
         // all temps in 10th
-        if (tempAir > 500)
+        if (tempAir10th > 500)
         {
             pwmRate = 0;
         }
@@ -284,10 +280,10 @@ int main()
         // uint32_t pwmRate = 254 * pSoll1000 / Pmax;
         // uint16_t pwmRate16 = pwmRate / 1000;
         lcd_print_two_uint16s("pSoll nach", pSollTenth, "pwmRate", pwmRate);
-        // _delay_ms(1000);
+        _delay_ms(1000);
         // OCR1A is PWM rate of heating
-        // todo OCR1A = pwmRate;
-        OCR1A = 0;
+        OCR1A = pwmRate;
+        
         // OXR1B is for LED showing heating rate
         if (pwmRate > 0)
         {
