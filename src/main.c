@@ -15,14 +15,8 @@
 #include "string_util.h"
 #include "NTC_B7703M103G40_10k.h"
 
+// 33 Ohm
 const uint16_t POWERRESISTOR = 33;
-
-uint16_t getPwmRate(uint16_t voltageMilli, uint16_t powerMilli)
-{
-    uint16_t pmaxMilli = voltageMilli ^ 2 / POWERRESISTOR;
-    uint16_t pwmProMill = (uint16_t)1000 * powerMilli / pmaxMilli;
-    return pwmProMill;
-}
 
 void init_adc()
 {
@@ -294,28 +288,5 @@ int main()
             // maintain minimum brightness 
             OCR1B = 1;
         }
-        
-
-
-        /*
-        static uint16_t x = 0;
-        if ( ++x > 254)
-        {
-            x = 0;
-       
-
-        // for (uint16_t x = 0; x <= 250; x = x + 2)
-        // {
-            char buf[16 + 1];
-            snprintf(buf, 16 + 1, "to %d", x);
-            lcd_print_two_lines("Setting OCR1A", buf);
-            lcd_print_two_uint16s("Setting OCA", buf, "PWM rate %", x * (uint16_t)100 / 255);
-            // OCR1A is PWM rate of heating
-            OCR1A = x;
-            // OXR1B is for LED showing heating rate
-            OCR1B = x;
-            _delay_ms(1000);
-        // }
-        */
     }
 }
