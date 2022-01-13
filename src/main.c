@@ -183,13 +183,13 @@ int main()
     _delay_ms(0);
 
     // init LCD Display
-    lcd_init(LCD_DISP_ON);
-    lcd_print_two_lines("LCD Display init", "done");
+    /// todo lcd lcd_init(LCD_DISP_ON);
+    /// todo lcd lcd_print_two_lines("LCD Display init", "done");
     _delay_ms(1000);
 
     // A/D Converter on Port C Pin 3 and 4
     init_adc();
-    lcd_print_two_lines("ADC init", "done");
+    /// todo lcd lcd_print_two_lines("ADC init", "done");
     _delay_ms(1000);
 
     // // PWM Signal on output OC1
@@ -198,7 +198,7 @@ int main()
 
     for (;;)
     {
-        lcd_clrscr();
+        /// todo lcd lcd_clrscr();
         //_delay_ms(500);
 
         // Do A/D conversion on ADC2. Sollwert
@@ -208,7 +208,7 @@ int main()
         // all temperatures in 10th of degrees
         uint32_t tmp = ( (uint32_t)value_adc2 * (uint32_t)250 / (uint32_t)1024 ) + 100;
         uint16_t tempSoll10th = tmp;
-        lcd_print_two_uint16s("value_adc2", value_adc2, "tempSoll", tempSoll10th);
+        /// todo lcd lcd_print_two_uint16s("value_adc2", value_adc2, "tempSoll", tempSoll10th);
         // _delay_ms(1000);
 
         // Do A/D conversion on ADC3. Input voltage
@@ -225,15 +225,15 @@ int main()
         uint16_t value_adc4 = convert_atod();
         uint16_t tempCooler = getRNP50UTempFromAdcValue(value_adc4);
 
-        lcd_print_two_uint16s("ADC4", value_adc4, "TempCooler", tempCooler);
+        /// todo lcd lcd_print_two_uint16s("ADC4", value_adc4, "TempCooler", tempCooler);
         _delay_ms(1000);
         // Do A/D conversion on ADC5. Air temperature
         select_channel_adc5();
         uint16_t value_adc5 = convert_atod();
         uint16_t tempAir10th = getRNP50UTempFromAdcValue(value_adc5);
-        lcd_print_two_uint16s("value_adc5", value_adc5, "TempAir", tempAir10th);
+        /// todo lcd lcd_print_two_uint16s("value_adc5", value_adc5, "TempAir", tempAir10th);
 
-        lcd_print_two_uint16s("TempSoll", tempSoll10th, "TempAir", tempAir10th);
+        /// todo lcd lcd_print_two_uint16s("TempSoll", tempSoll10th, "TempAir", tempAir10th);
         _delay_ms(1000);
         // Calculation of max power due to input voltage
         uint16_t Pmax = v0 * v0 / POWERRESISTOR;
@@ -246,7 +246,7 @@ int main()
         // Calculation of PWM rate
         // Proportional controller
         uint16_t pSollTenth = (tempSoll10th - tempAir10th) * 10;
-        lcd_print_two_uint16s("pSoll vor grenze", pSollTenth, "p10th", pSollTenth);
+        /// todo lcd lcd_print_two_uint16s("pSoll vor grenze", pSollTenth, "p10th", pSollTenth);
         // _delay_ms(1000);
         if (pSollTenth > PDerating * 10)
         {
@@ -256,12 +256,12 @@ int main()
         {
             pSollTenth = 0;
         }
-        lcd_print_two_uint16s("pSoll10th", pSollTenth, "pmax", Pmax);
+        /// todo lcd lcd_print_two_uint16s("pSoll10th", pSollTenth, "pmax", Pmax);
         // _delay_ms(5000);
 
         uint32_t pwmRate32 = (uint32_t)254 * (uint32_t)pSollTenth / (Pmax * 10);
         uint16_t pwmRate = (uint16_t)pwmRate32;
-        lcd_print_two_uint16s("pSoll", pSollTenth, "pwmRate", pwmRate);
+        /// todo lcd lcd_print_two_uint16s("pSoll", pSollTenth, "pwmRate", pwmRate);
         // _delay_ms(5000);
         if (pwmRate > 254)
         {
@@ -279,7 +279,7 @@ int main()
         }
         // uint32_t pwmRate = 254 * pSoll1000 / Pmax;
         // uint16_t pwmRate16 = pwmRate / 1000;
-        lcd_print_two_uint16s("pSoll nach", pSollTenth, "pwmRate", pwmRate);
+        /// todo lcd lcd_print_two_uint16s("pSoll nach", pSollTenth, "pwmRate", pwmRate);
         _delay_ms(1000);
         // OCR1A is PWM rate of heating
         OCR1A = pwmRate;
@@ -294,28 +294,5 @@ int main()
             // maintain minimum brightness 
             OCR1B = 1;
         }
-        
-
-
-        /*
-        static uint16_t x = 0;
-        if ( ++x > 254)
-        {
-            x = 0;
-       
-
-        // for (uint16_t x = 0; x <= 250; x = x + 2)
-        // {
-            char buf[16 + 1];
-            snprintf(buf, 16 + 1, "to %d", x);
-            lcd_print_two_lines("Setting OCR1A", buf);
-            lcd_print_two_uint16s("Setting OCA", buf, "PWM rate %", x * (uint16_t)100 / 255);
-            // OCR1A is PWM rate of heating
-            OCR1A = x;
-            // OXR1B is for LED showing heating rate
-            OCR1B = x;
-            _delay_ms(1000);
-        // }
-        */
     }
 }
