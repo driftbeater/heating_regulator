@@ -15,14 +15,8 @@
 #include "string_util.h"
 #include "NTC_B7703M103G40_10k.h"
 
+// 33 Ohm
 const uint16_t POWERRESISTOR = 33;
-
-uint16_t getPwmRate(uint16_t voltageMilli, uint16_t powerMilli)
-{
-    uint16_t pmaxMilli = voltageMilli ^ 2 / POWERRESISTOR;
-    uint16_t pwmProMill = (uint16_t)1000 * powerMilli / pmaxMilli;
-    return pwmProMill;
-}
 
 void init_adc()
 {
