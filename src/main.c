@@ -179,7 +179,7 @@ int main()
     // init LCD Display
     /// todo lcd lcd_init(LCD_DISP_ON);
     /// todo lcd lcd_print_two_lines("LCD Display init", "done");
-    _delay_ms(1000);
+    /// todo lcd _delay_ms(1000);
 
     // A/D Converter on Port C Pin 3 and 4
     init_adc();
@@ -220,7 +220,7 @@ int main()
         uint16_t tempCooler = getRNP50UTempFromAdcValue(value_adc4);
 
         /// todo lcd lcd_print_two_uint16s("ADC4", value_adc4, "TempCooler", tempCooler);
-        _delay_ms(1000);
+        /// todo lcd _delay_ms(1000);
         // Do A/D conversion on ADC5. Air temperature
         select_channel_adc5();
         uint16_t value_adc5 = convert_atod();
@@ -228,7 +228,7 @@ int main()
         /// todo lcd lcd_print_two_uint16s("value_adc5", value_adc5, "TempAir", tempAir10th);
 
         /// todo lcd lcd_print_two_uint16s("TempSoll", tempSoll10th, "TempAir", tempAir10th);
-        _delay_ms(1000);
+        /// todo lcd _delay_ms(1000);
         // Calculation of max power due to input voltage
         uint16_t Pmax = v0 * v0 / POWERRESISTOR;
 
@@ -274,7 +274,7 @@ int main()
         // uint32_t pwmRate = 254 * pSoll1000 / Pmax;
         // uint16_t pwmRate16 = pwmRate / 1000;
         /// todo lcd lcd_print_two_uint16s("pSoll nach", pSollTenth, "pwmRate", pwmRate);
-        _delay_ms(1000);
+        /// todo lcd _delay_ms(1000);
         // OCR1A is PWM rate of heating
         OCR1A = pwmRate;
         
@@ -288,5 +288,7 @@ int main()
             // maintain minimum brightness 
             OCR1B = 1;
         }
+
+        _delay_ms(3000);
     }
 }
