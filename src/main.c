@@ -85,7 +85,7 @@ void select_channel_adc5()
 
 uint16_t convert_atod()
 {
-    // Do conversion 3 times and return average
+    // Do conversion 3 times. Discard first measurment and return average of subsequent two.
 
     // Start Conversion
     ADCSRA |= _BV(ADSC);
@@ -94,13 +94,13 @@ uint16_t convert_atod()
 
     ADCSRA |= _BV(ADSC);
     loop_until_bit_is_clear(ADCSRA, ADSC);
-    value += ADCW;
+    value = ADCW;
 
     ADCSRA |= _BV(ADSC);
     loop_until_bit_is_clear(ADCSRA, ADSC);
     value += ADCW;
 
-    return value / 3;
+    return value / 2;
 }
 
 void init_pwm_counter2()
