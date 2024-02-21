@@ -15,8 +15,8 @@
 #include "string_util.h"
 #include "NTC_B7703M103G40_10k.h"
 
-// 33 Ohm
-const uint16_t POWERRESISTOR = 33;
+// 30 Ohm
+const uint16_t POWERRESISTOR = 30;
 
 void init_adc()
 {
