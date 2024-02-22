@@ -217,9 +217,9 @@ int main()
         // Do A/D conversion on ADC4. Cooler  temperature
         select_channel_adc4();
         uint16_t value_adc4 = convert_atod();
-        uint16_t tempCooler = getRNP50UTempFromAdcValue(value_adc4);
+        uint16_t tempCooler10th = getRNP50UTempFromAdcValue(value_adc4);
 
-        /// todo lcd lcd_print_two_uint16s("ADC4", value_adc4, "TempCooler", tempCooler);
+        /// todo lcd lcd_print_two_uint16s("ADC4", value_adc4, "TempCooler", tempCooler10th);
         /// todo lcd _delay_ms(1000);
         // Do A/D conversion on ADC5. Air temperature
         select_channel_adc5();
@@ -233,7 +233,7 @@ int main()
         uint16_t Pmax = v0 * v0 / POWERRESISTOR;
 
         // Calculation of max power at resistor due to derating curve
-        uint16_t PDerating = getRNP50UDeratedPower(tempCooler);
+        uint16_t PDerating = getRNP50UDeratedPower(tempCooler10th);
         // lcd_print_two_uint16s("Pmax", Pmax, "PDerating", PDerating);
         // _delay_ms(2000);
 
@@ -250,6 +250,14 @@ int main()
         {
             pSollTenth = 0;
         }
+        if (tempAir10th > 500)
+        {
+            pSollTenth = 0;
+        }
+        if (tempCooler10th > 600)
+        {
+            pSollTenth = 0;
+        }
         /// todo lcd lcd_print_two_uint16s("pSoll10th", pSollTenth, "pmax", Pmax);
         // _delay_ms(5000);
 
@@ -261,16 +269,7 @@ int main()
         {
             pwmRate = 254;
         }
-        // all temps in 10th
-        if (tempAir10th > 500)
-        {
-            pwmRate = 0;
-        }
-        // all temps in 10th
-        if (tempCooler > 700)
-        {
-            pwmRate = 0;
-        }
+
         // uint32_t pwmRate = 254 * pSoll1000 / Pmax;
         // uint16_t pwmRate16 = pwmRate / 1000;
         /// todo lcd lcd_print_two_uint16s("pSoll nach", pSollTenth, "pwmRate", pwmRate);

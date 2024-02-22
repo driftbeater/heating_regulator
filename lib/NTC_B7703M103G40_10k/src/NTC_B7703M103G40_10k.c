@@ -7,14 +7,16 @@ uint16_t getRNP50UDeratedPower(uint16_t temp)
 {
   // Maximum power dependent on flange temperatur
   // temperatures in 10th of degrees
+  // At 60 degrees, i.e. temp = 600, power should be 0.
   int16_t pmax = (int16_t)58 - ( temp / 30 );
   if (pmax < 0)
   { 
     return 0;
-  } 
-  if (pmax > 50) 
+  }
+  // todo 50
+  if (pmax > 30) 
   { 
-      return 50;
+      return 30;
   }
   return pmax;
 }
