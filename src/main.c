@@ -17,6 +17,46 @@
 
 // 30 Ohm
 const uint16_t POWERRESISTOR = 30;
+// Max temperature of resistor is 250 degrees
+const uint16_t tempResistorMax10th = 2500;
+const uint16_t pMaxResistor10th = 500;
+
+// temperatur is in 10th of degrees
+// power is in 10th of watts
+uint16_t getDeratedPower(uint16_t temp10th)
+{
+  // Maximum power dependent on flange temperatur
+  // temperatures in 10th of degrees
+  // power in 10th of watts
+  // maximum power at 0 degrees, degrades to 0 at 250 degrees
+  int16_t pDerated10th = (int16_t)pMaxResistor10th * ( 1 - temp10th / tempResistorMax10th );
+  if (pDerated10th < 0)
+  { 
+    return 0;
+  }
+  if (temp10th > 600)
+  {
+    return 0;
+  }
+  if (temp10th > 550 && pDerated10th > 100)
+  {
+    return 100;
+  }
+  if (temp10th > 500 && pDerated10th > 200)
+  {
+    return 200;
+  }
+  if (temp10th > 450 && pDerated10th > 300)
+  {
+    return 400;
+  }
+  if (pDerated10th > pMaxResistor10th) 
+  { 
+      return pMaxResistor10th;
+  }
+
+ return pDerated10th;
+}
 
 void init_adc()
 {
@@ -233,18 +273,23 @@ int main()
         uint16_t Pmax = v0 * v0 / POWERRESISTOR;
 
         // Calculation of max power at resistor due to derating curve
-        uint16_t PDerating = getRNP50UDeratedPower(tempCooler10th);
-        // lcd_print_two_uint16s("Pmax", Pmax, "PDerating", PDerating);
+        uint16_t PDerating10th = getDeratedPower(tempCooler10th);
+        // lcd_print_two_uint16s("Pmax", Pmax, "PDerating_tenth", PDerating_tenth);
         // _delay_ms(2000);
 
         // Calculation of PWM rate
         // Proportional controller
-        uint16_t pSollTenth = (tempSoll10th - tempAir10th) * 10;
+        int16_t pTmp = (tempSoll10th - tempAir10th) * 10;
+        uint16_t pSollTenth = pTmp > 0 ? pTmp : 0;
         /// todo lcd lcd_print_two_uint16s("pSoll vor grenze", pSollTenth, "p10th", pSollTenth);
         // _delay_ms(1000);
-        if (pSollTenth > PDerating * 10)
+        if (pSollTenth > PDerating10th)
         {
-            pSollTenth = PDerating * 10;
+            pSollTenth = PDerating10th;
+        }
+        if (PDerating10th > pMaxResistor10th)
+        {
+            pSollTenth = pMaxResistor10th;
         }
         if (tempAir10th > tempSoll10th)
         {
